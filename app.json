@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "EEG Neurofeedback",
+    "slug": "eegkit-neurofeedback",
+    "description": "An open-source neurofeedback trainer built on eegkit and eegkit-react.",
+    "version": "0.1.0",
+    "scheme": "eegkit-neurofeedback",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#0A0E17",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "io.github.aliassar.eegkitneurofeedback"
+    },
+    "android": {
+      "package": "io.github.aliassar.eegkitneurofeedback",
+      "adaptiveIcon": {
+        "backgroundColor": "#0A0E17",
+        "foregroundImage": "./assets/adaptive-icon.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "output": "single",
+      "favicon": "./assets/favicon.png",
+      "name": "EEG Neurofeedback",
+      "shortName": "Neurofeedback",
+      "themeColor": "#0A0E17",
+      "backgroundColor": "#0A0E17",
+      "description": "An open-source neurofeedback trainer built on eegkit. Try it with simulated EEG or stream your own over WebSocket."
+    },
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true,
+      "baseUrl": "/eegkit-neurofeedback"
+    }
+  }
+}

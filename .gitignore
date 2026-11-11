@@ -1,0 +1,37 @@
+# dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# generated native folders
+/ios
+/android
+
+# native signing
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem
+
+# Metro
+.metro-health-check*
+
+# debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# misc
+.DS_Store
+.env*.local
+*.tsbuildinfo
+coverage/
+__pycache__/

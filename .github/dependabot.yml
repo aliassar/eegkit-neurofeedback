@@ -1,0 +1,17 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
+  # Expo pins compatible native-module versions; upgrade those with
+  # `npx expo install --fix` per SDK release instead of individual bumps.
+  # This entry only keeps security updates flowing.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 0

@@ -4,18 +4,21 @@ import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "re
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Path, Rect } from "react-native-svg";
 import { AppText } from "@/components/AppText";
+import { Button } from "@/components/Button";
 import { BadgeMedal } from "@/components/kid/BadgeMedal";
 import { Buddy } from "@/components/kid/Buddy";
 import { GameArt } from "@/components/kid/GameArt";
 import { HoldButton } from "@/components/kid/HoldButton";
 import { STAR_PATH } from "@/components/kid/Star";
 import { GAMES } from "@/lib/games";
+import { createProfile } from "@/lib/profiles";
 import { qualityGate } from "@/lib/quality";
 import { earnedBadges, totalStars } from "@/lib/rewards";
 import { useEEGContext } from "@/state/eeg";
 import { useGate } from "@/state/gate";
 import { useProfiles } from "@/state/profiles";
 import { useChildRecords } from "@/state/records";
+import { useSettings } from "@/state/settings";
 import { useTheme } from "@/theme/theme";
 import { kid, MAX_CONTENT_WIDTH, radius, space } from "@/theme/tokens";
 
@@ -25,7 +28,8 @@ const STARS_PER_JAR = 50;
 /** The kid area: pick a game. Few words, big targets, no numbers. */
 export default function KidHome() {
   const { colors } = useTheme();
-  const { profiles, loaded, active, setActive } = useProfiles();
+  const { profiles, loaded, active, setActive, add } = useProfiles();
+  const { settings } = useSettings();
   const { sessions } = useChildRecords(active?.id);
   const { unlock } = useGate();
   const router = useRouter();
@@ -52,6 +56,14 @@ export default function KidHome() {
         <AppText variant="kidBody" tone="muted" style={styles.center}>
           Ask a grown-up to set things up for you.
         </AppText>
+        {settings.source === "demo" ? (
+          // Visitors to the web demo have no headset and no profile yet: let
+          // them play straight away. Grown-ups can rename or delete it later.
+          <Button
+            label="Try the demo with pretend brainwaves"
+            onPress={() => add({ ...createProfile("Explorer", 1), baselineSeconds: 20 })}
+          />
+        ) : null}
         <HoldButton label="Grown-ups: hold to open" onComplete={openGrownUps} />
       </SafeAreaView>
     );

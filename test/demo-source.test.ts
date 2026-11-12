@@ -1,20 +1,29 @@
-import { createSyntheticEEG, relativeBandPowers, welch } from "eegkit";
+import {
+  bandPowers,
+  createSyntheticEEG,
+  engagementIndex,
+  STANDARD_BANDS,
+  thetaBetaRatio,
+  welch,
+} from "eegkit";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createDemoGenerator, DEMO_STATES, demoSource } from "../src/lib/demo-source";
+import { SMR_BAND } from "../src/lib/protocols";
 
 const SAMPLE_RATE = 256;
 
-function relativeAlpha(signal: Float64Array): number {
+function powersOf(signal: Float64Array) {
   const spectrum = welch(signal, { sampleRate: SAMPLE_RATE, segmentLength: SAMPLE_RATE });
-  return relativeBandPowers(spectrum).alpha as number;
+  return bandPowers(spectrum, [...STANDARD_BANDS, SMR_BAND]);
 }
 
 describe("createDemoGenerator", () => {
-  it("equals eegkit's default synthetic EEG while all gains are 1", () => {
+  it("equals eegkit's default synthetic EEG while all gains are 1 (without the SMR rhythm)", () => {
     const demo = createDemoGenerator({
       sampleRate: SAMPLE_RATE,
       channels: 2,
       blinkRate: 0,
+      smrAmplitude: 0,
       seed: 7,
     });
     const reference = createSyntheticEEG({ sampleRate: SAMPLE_RATE, channels: 2, seed: 7 });
@@ -27,25 +36,29 @@ describe("createDemoGenerator", () => {
     }
   });
 
-  it("moves gradually towards a new state", () => {
+  it("follows a new state within a few seconds", () => {
     const demo = createDemoGenerator({ sampleRate: SAMPLE_RATE, channels: 1 });
-    demo.setTarget(DEMO_STATES.relaxed.gains);
-    demo.next(SAMPLE_RATE); // 1 s, a quarter of the time constant
-    expect(demo.gains.alpha).toBeGreaterThan(1.1);
-    expect(demo.gains.alpha).toBeLessThan(1.5);
-    demo.next(SAMPLE_RATE * 30);
-    expect(demo.gains.alpha).toBeCloseTo(2, 2);
+    demo.setTarget(DEMO_STATES.focused.gains);
+    demo.next(SAMPLE_RATE); // 1 s, two thirds of the time constant
+    expect(demo.gains.beta).toBeGreaterThan(1.3);
+    expect(demo.gains.beta).toBeLessThan(1.6);
+    demo.next(SAMPLE_RATE * 10);
+    expect(demo.gains.beta).toBeCloseTo(1.9, 2);
   });
 
-  it("raises relative alpha when relaxed", () => {
+  it("moves every protocol's metric the rewarded way when focused", () => {
     const neutral = createDemoGenerator({ sampleRate: SAMPLE_RATE, channels: 1, blinkRate: 0 });
-    const relaxed = createDemoGenerator({ sampleRate: SAMPLE_RATE, channels: 1, blinkRate: 0 });
-    relaxed.setTarget(DEMO_STATES.relaxed.gains);
-    neutral.next(SAMPLE_RATE * 30);
-    relaxed.next(SAMPLE_RATE * 30);
-    const n = relativeAlpha(neutral.next(SAMPLE_RATE * 8)[0] as Float64Array);
-    const r = relativeAlpha(relaxed.next(SAMPLE_RATE * 8)[0] as Float64Array);
-    expect(r).toBeGreaterThan(n * 1.4);
+    const focused = createDemoGenerator({ sampleRate: SAMPLE_RATE, channels: 1, blinkRate: 0 });
+    focused.setTarget(DEMO_STATES.focused.gains);
+    neutral.next(SAMPLE_RATE * 10);
+    focused.next(SAMPLE_RATE * 10);
+    const n = powersOf(neutral.next(SAMPLE_RATE * 8)[0] as Float64Array);
+    const f = powersOf(focused.next(SAMPLE_RATE * 8)[0] as Float64Array);
+    expect(thetaBetaRatio(f)).toBeLessThan(thetaBetaRatio(n) * 0.5);
+    expect((f.smr as number) / (f.theta as number)).toBeGreaterThan(
+      ((n.smr as number) / (n.theta as number)) * 2,
+    );
+    expect(engagementIndex(f)).toBeGreaterThan(engagementIndex(n) * 1.5);
   });
 });
 

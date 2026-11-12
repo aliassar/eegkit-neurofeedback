@@ -24,7 +24,7 @@ export function StatusPill() {
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${source} source, ${label}. Open setup.`}
-      onPress={() => router.navigate("/setup")}
+      onPress={() => router.navigate("/grown-ups/setup")}
       hitSlop={8}
       style={({ pressed }) => [
         styles.pill,
@@ -45,6 +45,7 @@ export function StatusPill() {
 
 const styles = StyleSheet.create({
   pill: {
+    alignSelf: "flex-start",
     flexDirection: "row",
     alignItems: "center",
     gap: 6,

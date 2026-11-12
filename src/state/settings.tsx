@@ -1,16 +1,6 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  createContext,
-  type ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { createContext, type ReactNode, useCallback, useContext, useMemo } from "react";
 import { DEFAULT_SETTINGS, parseSettings, type Settings } from "@/lib/settings";
-
-const KEY = "@eegkit-neurofeedback/settings";
+import { usePersistentState } from "./storage";
 
 interface SettingsContextValue {
   readonly settings: Settings;
@@ -22,34 +12,15 @@ interface SettingsContextValue {
 const SettingsContext = createContext<SettingsContextValue | null>(null);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    AsyncStorage.getItem(KEY)
-      .then((json) => {
-        if (!cancelled) setSettings(parseSettings(json));
-      })
-      .catch(() => {
-        // Storage unavailable (e.g. private browsing): keep the defaults.
-      })
-      .finally(() => {
-        if (!cancelled) setLoaded(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (loaded) AsyncStorage.setItem(KEY, JSON.stringify(settings)).catch(() => {});
-  }, [settings, loaded]);
-
-  const update = useCallback((patch: Partial<Settings>) => {
-    setSettings((current) => ({ ...current, ...patch }));
-  }, []);
-
+  const [settings, setSettings, loaded] = usePersistentState(
+    "@eegkit-neurofeedback/settings",
+    DEFAULT_SETTINGS,
+    parseSettings,
+  );
+  const update = useCallback(
+    (patch: Partial<Settings>) => setSettings((current) => ({ ...current, ...patch })),
+    [setSettings],
+  );
   const value = useMemo(() => ({ settings, loaded, update }), [settings, loaded, update]);
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
 }

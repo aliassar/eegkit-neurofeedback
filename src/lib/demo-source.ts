@@ -1,7 +1,7 @@
 /**
  * The demo source: synthetic EEG from eegkit whose band amplitudes can be
- * changed while it runs, so the neurofeedback loop can be tried without
- * hardware ("simulate relaxing").
+ * changed while it runs, so the games can be played without hardware
+ * ("Simulate focus").
  *
  * eegkit-react's `syntheticSource` fixes the band amplitudes when it is
  * created, and changing them would mean a new source, which reconnects and
@@ -9,14 +9,17 @@
  * interface directly. The signal is the sum of one eegkit
  * `createSyntheticEEG` generator per band plus one for the background, all
  * from the same seed, so with every gain at 1 it is exactly eegkit's
- * default synthetic EEG; the gains scale each band on top of that.
+ * default synthetic EEG; the gains scale each band on top of that. A small
+ * sensorimotor rhythm (13.5 Hz), which eegkit's generator doesn't place, is
+ * added so the SMR protocol has something to respond to.
  */
 import { createSyntheticEEG, type StandardBandName, type SyntheticEEG } from "eegkit";
 import type { EEGSource, SourceHandlers } from "eegkit-react";
 
-export type BandGains = Readonly<Record<StandardBandName, number>>;
+type Rhythm = StandardBandName | "smr";
+export type BandGains = Readonly<Record<Rhythm, number>>;
 
-export type DemoStateId = "neutral" | "relaxed" | "focused";
+export type DemoStateId = "neutral" | "focused";
 
 export interface DemoState {
   readonly id: DemoStateId;
@@ -25,41 +28,47 @@ export interface DemoState {
   readonly gains: BandGains;
 }
 
-const UNITY: BandGains = { delta: 1, theta: 1, alpha: 1, beta: 1, gamma: 1 };
+const UNITY: BandGains = { delta: 1, theta: 1, alpha: 1, beta: 1, gamma: 1, smr: 1 };
 
 /**
- * Caricatures of the patterns the protocols reward. Relaxed wakefulness
- * shows more alpha and less theta; focused attention shows less theta and
- * alpha and more beta. Real changes are smaller and slower.
+ * A caricature of focused attention as all three protocols reward it: less
+ * theta, more beta and SMR, a little less alpha. Real changes are smaller and
+ * slower, and nowhere near this consistent.
  */
 export const DEMO_STATES: Readonly<Record<DemoStateId, DemoState>> = {
   neutral: {
     id: "neutral",
-    label: "Neutral",
+    label: "Resting",
     description: "eegkit's default synthetic EEG",
     gains: UNITY,
-  },
-  relaxed: {
-    id: "relaxed",
-    label: "Relaxed",
-    description: "Alpha ×2, theta ×0.8",
-    gains: { ...UNITY, alpha: 2, theta: 0.8 },
   },
   focused: {
     id: "focused",
     label: "Focused",
-    description: "Theta ×0.6, alpha ×0.8, beta ×1.9",
-    gains: { ...UNITY, theta: 0.6, alpha: 0.8, beta: 1.9 },
+    description: "Theta ×0.6, alpha ×0.8, beta ×1.9, SMR ×2",
+    gains: { ...UNITY, theta: 0.6, alpha: 0.8, beta: 1.9, smr: 2 },
   },
 };
 
 const BANDS: readonly StandardBandName[] = ["delta", "theta", "alpha", "beta", "gamma"];
+const RHYTHMS: readonly Rhythm[] = [...BANDS, "smr"];
 
 /** eegkit's documented default band amplitudes for `createSyntheticEEG`, in µV (not exported). */
-const DEFAULT_AMPLITUDES: BandGains = { delta: 6, theta: 5, alpha: 10, beta: 4, gamma: 1.5 };
+const DEFAULT_AMPLITUDES: Readonly<Record<StandardBandName, number>> = {
+  delta: 6,
+  theta: 5,
+  alpha: 10,
+  beta: 4,
+  gamma: 1.5,
+};
+/** Frequency of the added sensorimotor rhythm. */
+const SMR_FREQUENCY = 13.5;
 
-/** Time constant, in seconds, with which the gains follow a new target, as real states shift gradually. */
-export const GAIN_TIME_CONSTANT = 4;
+/**
+ * Time constant, in seconds, with which the gains follow a new target. Short,
+ * so holding "Simulate focus" shows up in the game within a couple of seconds.
+ */
+export const GAIN_TIME_CONSTANT = 1.5;
 
 export interface DemoOptions {
   readonly sampleRate: number;
@@ -68,10 +77,11 @@ export interface DemoOptions {
   readonly mains?: 50 | 60;
   /** Blinks per minute. Default 6. */
   readonly blinkRate?: number;
+  /** Peak amplitude of the added 13.5 Hz rhythm in µV. Default 2.5. */
+  readonly smrAmplitude?: number;
   readonly seed?: number;
 }
 
-/** A synthetic EEG generator with adjustable band gains. */
 export interface DemoGenerator {
   /** Next `samples` samples per channel, channel-major (µV). */
   next(samples: number): Float64Array[];
@@ -107,16 +117,33 @@ export function createDemoGenerator(options: DemoOptions): DemoGenerator {
       bands: { ...silent, [band]: DEFAULT_AMPLITUDES[band] },
     }),
   ]);
-  const gains: Record<StandardBandName, number> = { ...UNITY };
+  const gains: Record<Rhythm, number> = { ...UNITY };
   let target: BandGains = UNITY;
   const alpha = 1 - Math.exp(-1 / (GAIN_TIME_CONSTANT * sampleRate));
+  // SMR oscillator per channel: slightly different frequency and phase, slow amplitude drift.
+  const smrStep = Array.from(
+    { length: channels },
+    (_, c) => (2 * Math.PI * (SMR_FREQUENCY + 0.2 * (c - (channels - 1) / 2))) / sampleRate,
+  );
+  const smrPhase = Array.from({ length: channels }, (_, c) => (c * 2.1 + seed) % (2 * Math.PI));
+  const smrAmplitude = options.smrAmplitude ?? 2.5;
+  let t = 0;
 
   return {
     next(samples) {
       const out = background.next(samples);
       const parts = bands.map(([band, generator]) => [band, generator.next(samples)] as const);
-      for (let i = 0; i < samples; i++) {
-        for (const band of BANDS) gains[band] += (target[band] - gains[band]) * alpha;
+      for (let i = 0; i < samples; i++, t++) {
+        for (const band of RHYTHMS) {
+          gains[band] += (target[band] - gains[band]) * alpha;
+        }
+        const smrGain = gains.smr * smrAmplitude * (1 + 0.25 * Math.sin((t / sampleRate) * 0.6));
+        for (let c = 0; c < channels; c++) {
+          const row = out[c] as Float64Array;
+          row[i] =
+            (row[i] as number) +
+            smrGain * Math.sin((smrStep[c] as number) * t + (smrPhase[c] as number));
+        }
         for (const [band, chunk] of parts) {
           const g = gains[band];
           for (let c = 0; c < channels; c++) {

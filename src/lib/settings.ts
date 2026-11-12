@@ -1,4 +1,4 @@
-/** User settings: types, defaults, validation and tolerant parsing of stored JSON. */
+/** Device settings: types, defaults, validation and tolerant parsing of stored JSON. */
 
 export type SourceKind = "demo" | "websocket";
 export type Mains = 50 | 60;
@@ -15,18 +15,14 @@ export interface Settings {
   /** Mains frequency to notch out and to check for line noise. */
   readonly mains: Mains;
   readonly websocket: WebSocketSettings;
-  /** Length of the resting baseline before training, in seconds. */
-  readonly baselineSeconds: number;
-  /** Planned training length, in minutes. The session ends by itself after this. */
-  readonly sessionMinutes: number;
   readonly theme: ThemePreference;
+  /** The child who is playing, or null before any profile exists. */
+  readonly activeProfileId: string | null;
 }
 
-/** The synthetic demo stream: four midline 10-20 sites at a typical consumer sample rate. */
-export const DEMO_STREAM = { sampleRate: 256, channels: ["Fz", "Cz", "Pz", "Oz"] } as const;
+/** The synthetic demo stream: central and frontal sites, as used for attention training. */
+export const DEMO_STREAM = { sampleRate: 256, channels: ["Fz", "Cz", "C3", "C4"] } as const;
 
-export const BASELINE_CHOICES = [15, 30, 60] as const;
-export const SESSION_MINUTE_CHOICES = [3, 5, 10, 20] as const;
 export const MAX_CHANNELS = 64;
 export const MAX_LABEL_LENGTH = 16;
 export const MAX_SAMPLE_RATE = 10_000;
@@ -34,10 +30,9 @@ export const MAX_SAMPLE_RATE = 10_000;
 export const DEFAULT_SETTINGS: Settings = {
   source: "demo",
   mains: 50,
-  websocket: { url: "ws://localhost:8765", sampleRate: 256, channels: ["Fz", "Cz", "Pz", "Oz"] },
-  baselineSeconds: 30,
-  sessionMinutes: 5,
+  websocket: { url: "ws://localhost:8765", sampleRate: 256, channels: ["Cz"] },
   theme: "system",
+  activeProfileId: null,
 };
 
 /** Splits `"Fz, Cz,,Pz "` into `["Fz", "Cz", "Pz"]`. */
@@ -89,7 +84,7 @@ export function validateWebSocketDraft(draft: WebSocketDraft, mains: Mains): Dra
 
   const channels = parseChannelLabels(draft.channels);
   if (channels.length === 0) {
-    errors.channels = "Enter at least one channel label, e.g. Fz, Cz, Pz";
+    errors.channels = "Enter at least one channel label, e.g. Cz";
   } else if (channels.length > MAX_CHANNELS) {
     errors.channels = `At most ${MAX_CHANNELS} channels`;
   } else if (new Set(channels).size !== channels.length) {
@@ -115,7 +110,7 @@ export function mixedContentWarning(pageProtocol: string | undefined, url: strin
   return "This page is served over https, so the browser only allows wss:// or ws://localhost. Use wss://, a local bridge, or run the app locally.";
 }
 
-const oneOf = <T>(value: unknown, options: readonly T[], fallback: T): T =>
+export const oneOf = <T>(value: unknown, options: readonly T[], fallback: T): T =>
   options.includes(value as T) ? (value as T) : fallback;
 
 /** Reads stored settings, keeping every valid field and defaulting the rest. Never throws. */
@@ -150,8 +145,7 @@ export function parseSettings(json: string | null | undefined): Settings {
     source: oneOf<SourceKind>(r.source, ["demo", "websocket"], d.source),
     mains,
     websocket,
-    baselineSeconds: oneOf(r.baselineSeconds, BASELINE_CHOICES, 30),
-    sessionMinutes: oneOf(r.sessionMinutes, SESSION_MINUTE_CHOICES, 5),
     theme: oneOf<ThemePreference>(r.theme, ["system", "dark", "light"], d.theme),
+    activeProfileId: typeof r.activeProfileId === "string" ? r.activeProfileId : null,
   };
 }

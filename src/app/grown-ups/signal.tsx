@@ -6,11 +6,13 @@ import { AppText } from "@/components/AppText";
 import { BandBars } from "@/components/BandBars";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
+import { GrownUpScreen } from "@/components/GrownUpScreen";
 import { LiveTraces } from "@/components/LiveTraces";
-import { Screen } from "@/components/Screen";
 import { Segmented } from "@/components/Segmented";
+import { StatusPill } from "@/components/StatusPill";
 import { DEMO_STATES, type DemoStateId } from "@/lib/demo-source";
 import { describeError } from "@/lib/errors";
+import { standardRelativePowers } from "@/lib/protocols";
 import { meanPeakAlpha } from "@/lib/quality";
 import { useEEGContext } from "@/state/eeg";
 import { useSettings } from "@/state/settings";
@@ -27,14 +29,16 @@ const DEMO_OPTIONS = (Object.keys(DEMO_STATES) as DemoStateId[]).map((id) => ({
   label: DEMO_STATES[id].label,
 }));
 
-export default function LiveScreen() {
+export default function SignalScreen() {
   const { eeg, kind, active, connect, demoState, setDemoState } = useEEGContext();
   const { settings } = useSettings();
   const router = useRouter();
   const focused = useIsFocused();
   const { width } = useWindowDimensions();
   const [microvolts, setMicrovolts] = useState<number>(50);
-  const powers = useBandPowers(eeg);
+  // Absolute powers, normalised over the standard bands only: the extra SMR band overlaps them.
+  const absolute = useBandPowers(eeg, { relative: false });
+  const powers = absolute ? standardRelativePowers(absolute) : undefined;
   const peak = meanPeakAlpha(eeg.result);
   const wide = width >= 1100;
   const error = describeError(eeg.error);
@@ -46,7 +50,8 @@ export default function LiveScreen() {
 
   if (!active) {
     return (
-      <Screen title="Live signal" subtitle={subtitle}>
+      <GrownUpScreen title="Signal" subtitle={subtitle}>
+        <StatusPill />
         <Card title="Not connected">
           <AppText tone="muted">
             {kind === "demo"
@@ -58,11 +63,11 @@ export default function LiveScreen() {
             <Button
               label="Open setup"
               variant="secondary"
-              onPress={() => router.navigate("/setup")}
+              onPress={() => router.navigate("/grown-ups/setup")}
             />
           </View>
         </Card>
-      </Screen>
+      </GrownUpScreen>
     );
   }
 
@@ -114,7 +119,8 @@ export default function LiveScreen() {
   );
 
   return (
-    <Screen title="Live signal" subtitle={subtitle}>
+    <GrownUpScreen title="Signal" subtitle={subtitle}>
+      <StatusPill />
       {error ? (
         <Card style={styles.error}>
           <AppText tone="poor" accessibilityLiveRegion="polite">
@@ -125,14 +131,14 @@ export default function LiveScreen() {
       {kind === "demo" ? (
         <Card title="Simulated state">
           <Segmented
-            label="Simulated brain state"
+            label="Simulated state"
             options={DEMO_OPTIONS}
             value={demoState}
             onChange={setDemoState}
           />
           <AppText variant="caption" tone="muted">
-            {DEMO_STATES[demoState].description}. Shifts the synthetic band powers over a few
-            seconds so you can watch the analysis respond. This is simulated data, not a brain.
+            {DEMO_STATES[demoState].description}. Shifts the synthetic band powers within a couple
+            of seconds so you can watch the analysis respond. This is simulated data, not a brain.
           </AppText>
         </Card>
       ) : null}
@@ -147,7 +153,7 @@ export default function LiveScreen() {
           {analysis}
         </>
       )}
-    </Screen>
+    </GrownUpScreen>
   );
 }
 

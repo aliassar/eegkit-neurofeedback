@@ -1,12 +1,12 @@
-import Constants from "expo-constants";
 import { useState } from "react";
-import { Linking, Platform, StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import { AppText } from "@/components/AppText";
 import { Button } from "@/components/Button";
 import { Card } from "@/components/Card";
 import { Field } from "@/components/Field";
-import { Screen } from "@/components/Screen";
+import { GrownUpScreen } from "@/components/GrownUpScreen";
 import { Segmented } from "@/components/Segmented";
+import { StatusPill } from "@/components/StatusPill";
 import { describeError } from "@/lib/errors";
 import {
   DEMO_STREAM,
@@ -37,12 +37,6 @@ const THEME_OPTIONS = [
   { value: "light", label: "Light" },
 ] as const satisfies readonly { value: ThemePreference; label: string }[];
 
-const LINKS = [
-  { label: "eegkit-neurofeedback", url: "https://github.com/aliassar/eegkit-neurofeedback" },
-  { label: "eegkit (signal processing)", url: "https://github.com/aliassar/eegkit" },
-  { label: "eegkit-react (hooks)", url: "https://github.com/aliassar/eegkit-react" },
-];
-
 const pageProtocol =
   Platform.OS === "web" && typeof window !== "undefined" ? window.location.protocol : undefined;
 
@@ -51,7 +45,8 @@ export default function SetupScreen() {
   const { eeg, kind, active, connect, disconnect } = useEEGContext();
 
   return (
-    <Screen title="Setup">
+    <GrownUpScreen title="Setup" subtitle="Headset, electrodes and display.">
+      <StatusPill />
       <Card title="Source">
         <Segmented
           label="EEG source"
@@ -65,7 +60,9 @@ export default function SetupScreen() {
               {DEMO_STREAM.channels.length} channels ({DEMO_STREAM.channels.join(", ")}) of
               synthetic EEG at {DEMO_STREAM.sampleRate} Hz, generated on this device by eegkit, with
               occasional blinks and a little mains hum so the quality checks have something to find.
-              It is simulated data: use it to explore the app, not to train.
+              In the games, "Simulate focus" (hold the button, or Space on a keyboard) shifts it
+              towards the pattern the protocol rewards. It is simulated data: use it to explore the
+              app, not to train.
             </AppText>
             <Button
               label={active ? "Pause demo" : "Resume demo"}
@@ -79,6 +76,20 @@ export default function SetupScreen() {
         {kind === "demo" && eeg.error ? (
           <AppText tone="poor">{describeError(eeg.error)}</AppText>
         ) : null}
+      </Card>
+
+      <Card title="Electrodes">
+        <AppText tone="muted">
+          Theta/Beta and SMR training usually use one active electrode at Cz (the top of the head,
+          halfway between the ears and halfway between the nose and the back of the head), or Fz and
+          Cz. Reference it to an earlobe or the bone behind the ear (mastoid), with the ground on
+          the other earlobe or the forehead, as your amplifier's manual describes.
+        </AppText>
+        <AppText tone="muted">
+          Before each session, check the Signal tab: every channel you train on should read Good or
+          Fair. Gel or saline and a snug fit matter more than anything else. The games pause on
+          their own when the signal is poor.
+        </AppText>
       </Card>
 
       <Card title="Mains frequency">
@@ -103,39 +114,7 @@ export default function SetupScreen() {
           onChange={(theme) => update({ theme })}
         />
       </Card>
-
-      <Card title="About">
-        <AppText variant="label" tone="fair">
-          Not a medical device
-        </AppText>
-        <AppText tone="muted">
-          This app is for education, research and wellness experiments. It does not diagnose, treat
-          or prevent any condition, and the evidence for consumer neurofeedback is mixed. If you
-          have a medical or psychological concern, talk to a qualified professional.
-        </AppText>
-        <AppText tone="muted">
-          Open source (MIT) and built on eegkit and eegkit-react. Settings and sessions stay on this
-          device.
-        </AppText>
-        <View style={styles.links}>
-          {LINKS.map((link) => (
-            <Button
-              key={link.url}
-              compact
-              variant="ghost"
-              label={link.label}
-              accessibilityRole="link"
-              accessibilityHint={link.url}
-              onPress={() => Linking.openURL(link.url)}
-              style={styles.link}
-            />
-          ))}
-        </View>
-        <AppText variant="caption" tone="muted">
-          Version {Constants.expoConfig?.version ?? "0.1.0"}
-        </AppText>
-      </Card>
-    </Screen>
+    </GrownUpScreen>
   );
 }
 
@@ -197,7 +176,7 @@ function WebSocketForm() {
         label="Channel labels"
         value={draft.channels}
         onChangeText={(channels) => edit({ channels })}
-        placeholder="Fz, Cz, Pz, Oz"
+        placeholder="Cz"
         error={errors.channels}
         hint="Comma separated, in the order the server sends them."
       />
@@ -264,6 +243,4 @@ const styles = StyleSheet.create({
   actions: { flexDirection: "row", flexWrap: "wrap", gap: space.md },
   grow: { flexGrow: 1 },
   status: { gap: space.xs },
-  links: { alignItems: "flex-start" },
-  link: { paddingHorizontal: 0 },
 });

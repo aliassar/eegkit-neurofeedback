@@ -2,7 +2,9 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import type { ReactNode } from "react";
 import { EEGProvider } from "@/state/eeg";
-import { SessionsProvider } from "@/state/sessions";
+import { GateProvider } from "@/state/gate";
+import { ProfilesProvider } from "@/state/profiles";
+import { RecordsProvider } from "@/state/records";
 import { SettingsProvider } from "@/state/settings";
 import { AppThemeProvider, useTheme } from "@/theme/theme";
 
@@ -35,13 +37,17 @@ export default function RootLayout() {
   return (
     <SettingsProvider>
       <AppThemeProvider>
-        <SessionsProvider>
-          <EEGProvider>
-            <NavigationTheme>
-              <Stack screenOptions={{ headerShown: false }} />
-            </NavigationTheme>
-          </EEGProvider>
-        </SessionsProvider>
+        <ProfilesProvider>
+          <RecordsProvider>
+            <EEGProvider>
+              <GateProvider>
+                <NavigationTheme>
+                  <Stack screenOptions={{ headerShown: false }} />
+                </NavigationTheme>
+              </GateProvider>
+            </EEGProvider>
+          </RecordsProvider>
+        </ProfilesProvider>
       </AppThemeProvider>
     </SettingsProvider>
   );

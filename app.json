@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "EEG Neurofeedback",
+    "name": "Focus Games",
     "slug": "eegkit-neurofeedback",
-    "description": "An open-source neurofeedback trainer built on eegkit and eegkit-react.",
-    "version": "0.1.0",
+    "description": "Attention games driven by EEG neurofeedback, for children with ADHD and the grown-ups who support them. Not a medical device.",
+    "version": "0.2.0",
     "scheme": "eegkit-neurofeedback",
     "orientation": "default",
     "icon": "./assets/icon.png",
@@ -24,11 +24,11 @@
     "web": {
       "output": "single",
       "favicon": "./assets/favicon.png",
-      "name": "EEG Neurofeedback",
-      "shortName": "Neurofeedback",
+      "name": "Focus Games",
+      "shortName": "Focus Games",
       "themeColor": "#0A0E17",
       "backgroundColor": "#0A0E17",
-      "description": "An open-source neurofeedback trainer built on eegkit. Try it with simulated EEG or stream your own over WebSocket."
+      "description": "Attention games driven by EEG neurofeedback. Playable in the browser with simulated EEG. Not a medical device."
     },
     "plugins": ["expo-router"],
     "experiments": {

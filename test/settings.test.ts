@@ -85,18 +85,17 @@ describe("parseSettings", () => {
       source: "websocket",
       mains: 60,
       websocket: { url: "ws://10.0.0.5:9000", sampleRate: 500, channels: ["O1", "O2"] },
-      baselineSeconds: 45,
-      sessionMinutes: 10,
       theme: "purple",
+      activeProfileId: "kid-1",
     });
     expect(parseSettings(stored)).toEqual({
       source: "websocket",
       mains: 60,
       websocket: { url: "ws://10.0.0.5:9000", sampleRate: 500, channels: ["O1", "O2"] },
-      baselineSeconds: 30,
-      sessionMinutes: 10,
       theme: "system",
+      activeProfileId: "kid-1",
     });
+    expect(parseSettings(JSON.stringify({ activeProfileId: 3 })).activeProfileId).toBeNull();
   });
 
   it("drops a stored WebSocket config that no longer validates", () => {

@@ -80,7 +80,38 @@ export const type = {
   label: { fontSize: 13, lineHeight: 18, fontWeight: "600" },
   caption: { fontSize: 13, lineHeight: 18, fontWeight: "400" },
   metric: { fontSize: 34, lineHeight: 40, fontWeight: "600" },
+  /** Kid area: big and bold, few words. */
+  kidTitle: { fontSize: 34, lineHeight: 40, fontWeight: "800" },
+  kidHeading: { fontSize: 24, lineHeight: 30, fontWeight: "800" },
+  kidBody: { fontSize: 19, lineHeight: 26, fontWeight: "600" },
 } as const;
+
+/** Bright colours for the kid area and the games, the same in light and dark mode. */
+export const kid = {
+  sun: "#FFC83D",
+  sunDeep: "#F59E0B",
+  coral: "#FF7A6B",
+  sky: "#7CC6FF",
+  skyDeep: "#3B8FE0",
+  grass: "#6BCB77",
+  grassDeep: "#3E9E52",
+  violet: "#9C8CFF",
+  pink: "#FF8FC7",
+  cream: "#FFF7E6",
+  ink: "#24324A",
+  star: "#FFD23F",
+  starEdge: "#E3A008",
+} as const;
+
+/** One colour per buddy design. */
+export const BUDDY_COLORS = [
+  "#FF8F6B",
+  "#7CC6FF",
+  "#8FD694",
+  "#C3A6FF",
+  "#FFC83D",
+  "#FF8FC7",
+] as const;
 
 /** Content never gets wider than this on large screens. */
 export const MAX_CONTENT_WIDTH = 960;

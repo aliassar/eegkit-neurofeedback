@@ -1,7 +1,7 @@
 {
   "name": "eegkit-neurofeedback",
-  "version": "0.1.0",
-  "description": "An open-source neurofeedback trainer for web, iOS and Android, built on eegkit and eegkit-react.",
+  "version": "0.2.0",
+  "description": "Focus Games: open-source EEG attention games for children with ADHD, for web, iOS and Android. Built on eegkit and eegkit-react. Not a medical device.",
   "license": "MIT",
   "author": "Ali Assar",
   "repository": {
@@ -25,8 +25,8 @@
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
-    "eegkit": "github:aliassar/eegkit",
-    "eegkit-react": "github:aliassar/eegkit-react",
+    "eegkit": "github:aliassar/eegkit#v0.1.0",
+    "eegkit-react": "github:aliassar/eegkit-react#v0.1.0",
     "expo": "~58.0.24",
     "expo-constants": "~58.0.16",
     "expo-linking": "~58.0.17",

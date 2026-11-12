@@ -1,6 +1,7 @@
 import { type EEGSource, type EEGState, useEEG, webSocketSource } from "eegkit-react";
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from "react";
 import { type DemoSource, type DemoStateId, demoSource } from "@/lib/demo-source";
+import { ANALYSIS_BANDS } from "@/lib/protocols";
 import { DEMO_STREAM, type SourceKind } from "@/lib/settings";
 import { useSettings } from "./settings";
 
@@ -19,8 +20,8 @@ interface EEGContextValue {
 const EEGContext = createContext<EEGContextValue | null>(null);
 
 /**
- * One EEG connection for the whole app, so the live view and training share
- * it. The demo connects by itself, so the web demo shows data straight away;
+ * One EEG connection for the whole app, so the signal check, the games and
+ * the focus check share it. The demo connects by itself, so the web demo shows data straight away;
  * a WebSocket waits for "Connect".
  */
 export function EEGProvider({ children }: { children: ReactNode }) {
@@ -51,7 +52,8 @@ export function EEGProvider({ children }: { children: ReactNode }) {
     if (source && "setState" in source) (source as DemoSource).setState(demoState);
   }, [source, demoState]);
 
-  const eeg = useEEG(source, { notch: mains });
+  // SMR is measured alongside the standard bands for the SMR protocol.
+  const eeg = useEEG(source, { notch: mains, bands: ANALYSIS_BANDS });
 
   const value = useMemo<EEGContextValue>(
     () => ({
